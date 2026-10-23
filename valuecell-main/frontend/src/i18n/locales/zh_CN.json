@@ -36,6 +36,20 @@
     "updates": {
       "title": "应用更新",
       "check": "检查更新"
+    },
+    "monitoring": {
+      "title": "服务健康状态",
+      "description": "API 及其数据库连接的实时状态。",
+      "overall": "总体状态",
+      "api": "API",
+      "database": "数据库",
+      "healthy": "正常",
+      "degraded": "降级",
+      "unavailable": "不可用",
+      "checking": "检查中",
+      "lastChecked": "上次检查",
+      "responseTime": "响应时间：{{milliseconds}} 毫秒",
+      "refresh": "刷新"
     }
   },
   "auth": {
@@ -105,7 +119,22 @@
   "common": {
     "back": "返回",
     "loading": "加载中...",
-    "settingUpEnvironment": "正在配置环境..."
+    "settingUpEnvironment": "正在配置环境...",
+    "backendUnavailable": "后端暂不可用",
+    "backendRetryHint": "系统将自动重试连接。",
+    "retry": "重试",
+    "monitoring": {
+      "serviceStatus": "服务状态",
+      "healthy": "正常",
+      "degraded": "降级",
+      "unavailable": "不可用",
+      "unknown": "尚未检查",
+      "checking": "正在检查状态",
+      "api": "API",
+      "database": "数据库",
+      "lastChecked": "上次检查",
+      "latency": "响应时间"
+    }
   },
   "nav": {
     "home": "首页",

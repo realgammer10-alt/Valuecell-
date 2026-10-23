@@ -36,6 +36,20 @@
     "updates": {
       "title": "應用程式更新",
       "check": "檢查更新"
+    },
+    "monitoring": {
+      "title": "服務健康狀態",
+      "description": "API 與資料庫連線的即時狀態。",
+      "overall": "整體狀態",
+      "api": "API",
+      "database": "資料庫",
+      "healthy": "正常",
+      "degraded": "降級",
+      "unavailable": "無法使用",
+      "checking": "檢查中",
+      "lastChecked": "上次檢查",
+      "responseTime": "回應時間：{{milliseconds}} 毫秒",
+      "refresh": "重新整理"
     }
   },
   "auth": {
@@ -105,7 +119,22 @@
   "common": {
     "back": "返回",
     "loading": "載入中...",
-    "settingUpEnvironment": "正在配置環境..."
+    "settingUpEnvironment": "正在配置環境...",
+    "backendUnavailable": "後端目前無法使用",
+    "backendRetryHint": "系統將自動重試連線。",
+    "retry": "重試",
+    "monitoring": {
+      "serviceStatus": "服務狀態",
+      "healthy": "正常",
+      "degraded": "降級",
+      "unavailable": "無法使用",
+      "unknown": "尚未檢查",
+      "checking": "正在檢查狀態",
+      "api": "API",
+      "database": "資料庫",
+      "lastChecked": "上次檢查",
+      "latency": "回應時間"
+    }
   },
   "nav": {
     "home": "首頁",

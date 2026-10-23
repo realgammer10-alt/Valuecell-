@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import IntEnum
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Literal, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -70,6 +70,11 @@ class AppInfoData(BaseModel):
 class HealthCheckData(BaseModel):
     """Health check data."""
 
-    status: str = Field(..., description="Service status")
+    status: Literal["healthy", "degraded"] = Field(
+        ..., description="Overall service status"
+    )
     version: str = Field(..., description="Service version")
     timestamp: Optional[datetime] = Field(None, description="Check timestamp")
+    checks: dict[str, Literal["healthy", "unhealthy"]] = Field(
+        default_factory=dict, description="Status of individual service dependencies"
+    )

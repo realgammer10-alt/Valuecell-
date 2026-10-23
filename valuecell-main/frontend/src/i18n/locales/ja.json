@@ -36,6 +36,20 @@
     "updates": {
       "title": "アプリアップデート",
       "check": "アップデートを確認"
+    },
+    "monitoring": {
+      "title": "サービスの状態",
+      "description": "API とデータベース接続のリアルタイム状態。",
+      "overall": "全体の状態",
+      "api": "API",
+      "database": "データベース",
+      "healthy": "正常",
+      "degraded": "一部停止",
+      "unavailable": "利用不可",
+      "checking": "確認中",
+      "lastChecked": "最終確認",
+      "responseTime": "応答時間: {{milliseconds}} ms",
+      "refresh": "更新"
     }
   },
   "auth": {
@@ -105,7 +119,22 @@
   "common": {
     "back": "戻る",
     "loading": "読み込み中...",
-    "settingUpEnvironment": "環境をセットアップ中..."
+    "settingUpEnvironment": "環境をセットアップ中...",
+    "backendUnavailable": "バックエンドを利用できません",
+    "backendRetryHint": "サービスは自動的に再接続を試みます。",
+    "retry": "再試行",
+    "monitoring": {
+      "serviceStatus": "サービスの状態",
+      "healthy": "正常",
+      "degraded": "一部低下",
+      "unavailable": "利用不可",
+      "unknown": "未確認",
+      "checking": "状態を確認中",
+      "api": "API",
+      "database": "データベース",
+      "lastChecked": "最終確認",
+      "latency": "応答時間"
+    }
   },
   "nav": {
     "home": "ホーム",

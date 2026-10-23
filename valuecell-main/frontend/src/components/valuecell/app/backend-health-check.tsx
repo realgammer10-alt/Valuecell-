@@ -1,10 +1,20 @@
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  CircleAlert,
+  CircleCheck,
+  LoaderCircle,
+  RefreshCw,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBackendHealth } from "@/api/system";
-import ValuecellLogo from "@/assets/png/logo/valuecell-logo.webp";
-import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export function BackendHealthCheck({
   children,
@@ -12,11 +22,10 @@ export function BackendHealthCheck({
   children: React.ReactNode;
 }) {
   const { t } = useTranslation();
-  const { isError, isSuccess } = useBackendHealth();
+  const { data, isError, isFetching, isPending, isSuccess, refetch } =
+    useBackendHealth();
   const [showError, setShowError] = useState(false);
-  const [progress, setProgress] = useState(0);
 
-  // Debounce showing the error screen to avoid flickering on initial load or brief network blips
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     if (isError) {
@@ -27,95 +36,178 @@ export function BackendHealthCheck({
     return () => clearTimeout(timer);
   }, [isError]);
 
-  // Fake progress bar logic
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (showError) {
-      interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 99) return prev;
-
-          // Dynamic increment logic to simulate realistic loading
-          const r = Math.random();
-          let increment = 0;
-
-          if (r < 0.1) {
-            // 10% chance of "stall" (network delay simulation)
-            increment = 0.02;
-          } else if (r > 0.9) {
-            // 10% chance of "jump" (fast processing)
-            increment = 0.8;
-          } else {
-            // Normal variance: random between 0.1 and 0.4
-            // Average is roughly 0.25, keeping total time around 40s
-            increment = 0.1 + Math.random() * 0.3;
-          }
-
-          return prev + increment;
-        });
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [showError]);
-
-  if (isSuccess && !showError) {
-    return <>{children}</>;
-  }
+  const isUnavailable = isError;
+  const isDegraded = !isUnavailable && data?.data.status === "degraded";
+  const statusLabel = isUnavailable
+    ? t("common.monitoring.unavailable")
+    : isDegraded
+      ? t("common.monitoring.degraded")
+      : data
+        ? t("common.monitoring.healthy")
+        : t("common.monitoring.checking");
+  const StatusIcon =
+    isUnavailable || isDegraded
+      ? CircleAlert
+      : isPending || isFetching
+        ? LoaderCircle
+        : CircleCheck;
+  const statusColor =
+    isUnavailable || isDegraded
+      ? "text-destructive"
+      : isPending || isFetching
+        ? "text-muted-foreground"
+        : "text-emerald-600 dark:text-emerald-400";
+  const checks = data?.data.checks ?? {};
+  const checkRows = [
+    {
+      key: "api",
+      label: t("common.monitoring.api"),
+      value: isUnavailable ? "unhealthy" : (checks.api ?? "unknown"),
+    },
+    {
+      key: "database",
+      label: t("common.monitoring.database"),
+      value: isUnavailable ? "unknown" : (checks.database ?? "unknown"),
+    },
+  ];
 
   return (
-    <AnimatePresence>
-      {showError && (
-        <motion.div
-          initial={{ opacity: 0.6 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0.6 }}
-          transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-background/80 p-4 text-center"
-        >
-          <div className="relative flex flex-col items-center justify-center space-y-8 p-8">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
-              className="relative z-10"
+    <>
+      {isSuccess && !showError && (
+        <>
+          {children}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="fixed right-3 bottom-3 z-40 max-w-[calc(100vw-1.5rem)] bg-background/95 shadow-md"
+                aria-label={`${t("common.monitoring.serviceStatus")}: ${statusLabel}`}
+                aria-live="polite"
+              >
+                <StatusIcon
+                  className={`size-4 ${statusColor} ${isFetching ? "animate-spin" : ""}`}
+                />
+                <span className="truncate">{statusLabel}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="top"
+              className="w-72 max-w-[calc(100vw-1.5rem)] space-y-3"
             >
-              <img
-                src={ValuecellLogo}
-                alt="Valuecell Logo"
-                className="size-52 object-contain"
-              />
-            </motion.div>
-
-            {/* Text Content */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="space-y-4"
-            >
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t("common.settingUpEnvironment")}
-              </p>
-            </motion.div>
-
-            {/* Progress Bar & Status */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="w-[400px] space-y-4"
-            >
-              <div className="max-w-lg space-y-2">
-                <Progress value={progress} className="h-2 w-full bg-muted/50" />
-                <div className="flex justify-between font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                  <span>{t("common.loading")}</span>
-                  <span>{Math.round(progress)}%</span>
-                </div>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-semibold text-sm">
+                  {t("common.monitoring.serviceStatus")}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  aria-label={t("common.retry")}
+                  title={t("common.retry")}
+                >
+                  <RefreshCw
+                    className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+                  />
+                </Button>
               </div>
-            </motion.div>
-          </div>
-        </motion.div>
+              {isUnavailable && (
+                <p className="text-muted-foreground text-xs">
+                  {t("common.backendRetryHint")}
+                </p>
+              )}
+              <div className="space-y-2" aria-live="polite">
+                {checkRows.map((check) => {
+                  const healthy = check.value === "healthy";
+                  const unknown = check.value === "unknown";
+                  const CheckIcon = healthy
+                    ? CircleCheck
+                    : unknown
+                      ? LoaderCircle
+                      : CircleAlert;
+                  const checkLabel = healthy
+                    ? t("common.monitoring.healthy")
+                    : unknown
+                      ? t("common.monitoring.unknown")
+                      : t("common.monitoring.unavailable");
+
+                  return (
+                    <div
+                      key={check.key}
+                      className="flex items-center justify-between gap-3 text-sm"
+                    >
+                      <span>{check.label}</span>
+                      <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                        <CheckIcon
+                          className={`size-3.5 ${healthy ? "text-emerald-600 dark:text-emerald-400" : check.value === "unhealthy" ? "text-destructive" : ""}`}
+                        />
+                        {checkLabel}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="border-t pt-2 text-muted-foreground text-xs">
+                {data?.data.timestamp && (
+                  <p className="flex gap-1">
+                    <span>{t("common.monitoring.lastChecked")}:</span>
+                    <time dateTime={data.data.timestamp}>
+                      {new Date(data.data.timestamp).toLocaleTimeString()}
+                    </time>
+                  </p>
+                )}
+                {data?.latencyMs !== undefined && (
+                  <p>
+                    {t("common.monitoring.latency")}: {data.latencyMs} ms
+                  </p>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </>
       )}
-    </AnimatePresence>
+      <AnimatePresence>
+        {!isSuccess && (
+          <motion.div
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0.6 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="fixed inset-0 z-9999 flex flex-col items-center justify-center gap-6 bg-background/95 p-4 text-center"
+            role="alert"
+          >
+            {showError ? (
+              <CircleAlert className="size-10 text-destructive" />
+            ) : (
+              <LoaderCircle className="size-10 animate-spin text-muted-foreground" />
+            )}
+            <div className="space-y-2">
+              <h1 className="font-semibold text-xl">
+                {showError
+                  ? t("common.backendUnavailable")
+                  : t("common.settingUpEnvironment")}
+              </h1>
+              {showError && (
+                <p className="text-muted-foreground">
+                  {t("common.backendRetryHint")}
+                </p>
+              )}
+            </div>
+            {showError && (
+              <Button
+                onClick={() => void refetch()}
+                disabled={isFetching}
+                variant="outline"
+              >
+                {isFetching ? t("common.loading") : t("common.retry")}
+              </Button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

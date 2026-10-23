@@ -1,14 +1,37 @@
 """System related API routes."""
 
-from datetime import datetime
+import asyncio
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Request
+from loguru import logger
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from ....config.constants import REGION_DEFAULT_TICKERS
 from ....utils.i18n_utils import detect_user_region_async
 from ...config.settings import get_settings
+from ...db.connection import get_engine
 from ..schemas import AppInfoData, HealthCheckData, SuccessResponse
+
+
+def _check_database_connection() -> None:
+    """Run a lightweight query to confirm that the configured database is usable."""
+    with get_engine().connect() as connection:
+        connection.execute(text("SELECT 1"))
+
+
+async def _is_database_healthy() -> bool:
+    """Check database connectivity without blocking the API event loop."""
+    try:
+        await asyncio.to_thread(_check_database_connection)
+    except (SQLAlchemyError, OSError, TimeoutError) as exc:
+        logger.warning(
+            "Database health check failed ({})", type(exc).__name__
+        )
+        return False
+    return True
 
 
 def _get_client_ip(request: Request) -> Optional[str]:
@@ -60,13 +83,24 @@ def create_system_router() -> APIRouter:
         description="Check service running status and version information",
     )
     async def health_check():
-        """Service health status check."""
+        """Report API and database health without exposing connection details."""
+        database_healthy = await _is_database_healthy()
+        checks = {
+            "api": "healthy",
+            "database": "healthy" if database_healthy else "unhealthy",
+        }
         health_data = HealthCheckData(
-            status="healthy", version=settings.APP_VERSION, timestamp=datetime.now()
+            status="healthy" if database_healthy else "degraded",
+            version=settings.APP_VERSION,
+            timestamp=datetime.now(timezone.utc),
+            checks=checks,
         )
-        return SuccessResponse.create(
-            data=health_data, msg="Service is running normally"
+        message = (
+            "Service is running normally"
+            if database_healthy
+            else "Service is running with degraded dependencies"
         )
+        return SuccessResponse.create(data=health_data, msg=message)
 
     @router.get(
         "/default-tickers",

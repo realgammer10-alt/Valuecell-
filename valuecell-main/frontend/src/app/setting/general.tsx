@@ -1,5 +1,7 @@
+import { Activity, CheckCircle2, CircleX, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
+import { useBackendHealth } from "@/api/system";
 // import { useSignOut } from "@/api/system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,35 @@ export default function GeneralPage() {
   const { setStockColorMode, setLanguage } = useSettingsActions();
   const { checkAndUpdate } = useUpdateToast();
   const { isTauriApp, appVersion } = useTauriInfo();
+  const {
+    data: healthResponse,
+    isError: isHealthError,
+    isFetching: isHealthFetching,
+    isLoading: isHealthLoading,
+    refetch: refreshHealth,
+  } = useBackendHealth();
+  const health = healthResponse?.data;
+  const apiHealthy = Boolean(health) && !isHealthError;
+  const databaseHealthy =
+    health?.checks.database === "healthy" && !isHealthError;
+  const apiLabel = isHealthError
+    ? t("general.monitoring.unavailable")
+    : isHealthLoading
+      ? t("general.monitoring.checking")
+      : t("general.monitoring.healthy");
+  const databaseLabel = health
+    ? databaseHealthy
+      ? t("general.monitoring.healthy")
+      : t("general.monitoring.degraded")
+    : isHealthError
+      ? t("general.monitoring.unavailable")
+      : t("general.monitoring.checking");
+  const overallLabel =
+    isHealthError || health?.status === "degraded"
+      ? t("general.monitoring.degraded")
+      : health
+        ? t("general.monitoring.healthy")
+        : t("general.monitoring.checking");
   // const { email, id } = useSystemInfo();
   // const isLoggedIn = useIsLoggedIn();
 
@@ -187,6 +218,94 @@ export default function GeneralPage() {
           </Field>
         )}
       </FieldGroup>
+
+      <section
+        aria-labelledby="service-health-title"
+        className="max-w-2xl rounded-lg border border-border p-5"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h2
+              id="service-health-title"
+              className="flex items-center gap-2 font-semibold text-base"
+            >
+              <Activity className="size-4" />
+              {t("general.monitoring.title")}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {t("general.monitoring.description")}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refreshHealth()}
+            disabled={isHealthFetching}
+            aria-label={t("general.monitoring.refresh")}
+          >
+            <RefreshCw
+              className={isHealthFetching ? "size-4 animate-spin" : "size-4"}
+            />
+            {t("general.monitoring.refresh")}
+          </Button>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-md bg-muted/50 p-3">
+            <p className="text-muted-foreground text-sm">
+              {t("general.monitoring.api")}
+            </p>
+            <output
+              className={`mt-1 flex items-center gap-2 font-medium ${isHealthError ? "text-destructive" : "text-emerald-600"}`}
+            >
+              {isHealthLoading ? (
+                <RefreshCw className="size-4 animate-spin" />
+              ) : apiHealthy ? (
+                <CheckCircle2 className="size-4" />
+              ) : (
+                <CircleX className="size-4" />
+              )}
+              {apiLabel}
+            </output>
+          </div>
+          <div className="rounded-md bg-muted/50 p-3">
+            <p className="text-muted-foreground text-sm">
+              {t("general.monitoring.database")}
+            </p>
+            <output
+              className={`mt-1 flex items-center gap-2 font-medium ${databaseHealthy ? "text-emerald-600" : "text-destructive"}`}
+            >
+              {isHealthLoading ? (
+                <RefreshCw className="size-4 animate-spin" />
+              ) : databaseHealthy ? (
+                <CheckCircle2 className="size-4" />
+              ) : (
+                <CircleX className="size-4" />
+              )}
+              {databaseLabel}
+            </output>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-muted-foreground text-xs">
+          <span>
+            {t("general.monitoring.overall")}: {overallLabel}
+          </span>
+          {healthResponse && (
+            <span>
+              {t("general.monitoring.responseTime", {
+                milliseconds: healthResponse.latencyMs,
+              })}
+            </span>
+          )}
+          {health?.timestamp && (
+            <span>
+              {t("general.monitoring.lastChecked")}:{" "}
+              {new Date(health.timestamp).toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

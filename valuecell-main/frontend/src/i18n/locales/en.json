@@ -36,6 +36,20 @@
     "updates": {
       "title": "App Updates",
       "check": "Check for Update"
+    },
+    "monitoring": {
+      "title": "Service health",
+      "description": "Live status of the API and its database connection.",
+      "overall": "Overall",
+      "api": "API",
+      "database": "Database",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "unavailable": "Unavailable",
+      "checking": "Checking",
+      "lastChecked": "Last checked",
+      "responseTime": "Response time: {{milliseconds}} ms",
+      "refresh": "Refresh"
     }
   },
   "auth": {
@@ -105,7 +119,22 @@
   "common": {
     "back": "Back",
     "loading": "Loading",
-    "settingUpEnvironment": "Setting up environment..."
+    "settingUpEnvironment": "Setting up environment...",
+    "backendUnavailable": "Backend unavailable",
+    "backendRetryHint": "The service will retry automatically.",
+    "retry": "Retry",
+    "monitoring": {
+      "serviceStatus": "Service status",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "unavailable": "Unavailable",
+      "unknown": "Not checked",
+      "checking": "Checking status",
+      "api": "API",
+      "database": "Database",
+      "lastChecked": "Last checked",
+      "latency": "Response time"
+    }
   },
   "nav": {
     "home": "Home",

@@ -11,6 +11,13 @@ export type SystemInfo = {
   updated_at: string;
 };
 
+export interface HealthCheckData {
+  status: "healthy" | "degraded";
+  version: string;
+  timestamp: string | null;
+  checks: Record<string, "healthy" | "unhealthy">;
+}
+
 export interface StrategyRankItem {
   id: number;
   name: string;

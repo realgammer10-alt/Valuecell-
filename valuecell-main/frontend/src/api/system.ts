@@ -9,6 +9,7 @@ import type {
   StrategyDetail,
   StrategyRankItem,
   StrategyReport,
+  HealthCheckData,
   SystemInfo,
 } from "@/types/system";
 
@@ -26,10 +27,19 @@ export interface DefaultTickersResponse {
 export const useBackendHealth = () => {
   return useQuery({
     queryKey: ["backend-health"],
-    queryFn: () => apiClient.get<boolean>("/healthz"),
+    queryFn: async () => {
+      const startedAt = performance.now();
+      const response = await apiClient.get<ApiResponse<HealthCheckData>>(
+        "/system/health",
+      );
+      return {
+        ...response,
+        latencyMs: Math.round(performance.now() - startedAt),
+      };
+    },
     retry: false,
     refetchInterval: (query) => {
-      return query.state.status === "error" ? 2000 : 10000;
+      return query.state.status === "error" ? 2000 : 5000;
     },
     refetchOnWindowFocus: true,
   });

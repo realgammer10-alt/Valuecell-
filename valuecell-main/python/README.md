@@ -13,6 +13,14 @@
 
 See detailed flow diagrams and design notes in `../docs/CORE_ARCHITECTURE.md`.
 
+## API Health Monitoring
+
+The `/api/v1/healthz` endpoint is a lightweight API liveness check. The
+`/api/v1/system/health` endpoint reports the API and configured database
+connectivity, along with a UTC check timestamp and application version. A
+database connection failure marks the service as `degraded` while keeping the
+API response available for monitoring.
+
 ## Quickstart
 
 Set up the environment and verify your install:
